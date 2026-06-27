@@ -1,6 +1,6 @@
 import json
 import re
-from groq import Groq
+from groq import Groq, APIError
 
 import config
 from services import mcp_client
@@ -12,23 +12,43 @@ Help patients find doctors, understand symptoms, and book appointments.
 Also assist doctors and nurses with patient-related queries.
 
 RULES:
-1. Detect user language from their message. Always respond in that
-   SAME language. Supported: English, Hindi (हिन्दी), Tamil (தமிழ்),
-   Telugu (తెలుగు), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം),
-   Bengali (বাংলা), Marathi (मराठी), Gujarati (ગુજરાતી).
+1. LANGUAGE: On every single turn, detect the language of the user's CURRENT
+   message from its script and wording, and reply ONLY in that language —
+   regardless of what language earlier turns used and regardless of any
+   account/profile language setting (you do not have access to that setting
+   and must never assume it). Supported: English, Hindi (हिन्दी),
+   Tamil (தமிழ்), Telugu (తెలుగు), Kannada (ಕನ್ನಡ), Malayalam (മലയാളം),
+   Bengali (বাংলা), Marathi (मराठी), Gujarati (ગુજરાતી). If a message mixes
+   languages, reply in whichever language is dominant in that message.
 2. NEVER give a definitive diagnosis. Say symptoms "may suggest"
    a condition and always recommend seeing a doctor.
-3. When a patient describes symptoms, call search_doctors to find
-   nearby specialists. Ask for location if not already provided.
-4. When returning doctor results, format them inside this exact tag:
+3. TOOLS: Only call a function when you have real, concrete values for every
+   required parameter. NEVER invent placeholder values like "unknown",
+   "N/A", empty strings, or guessed numbers for lat/lng/location. If you are
+   missing required information (e.g. the user's location), do NOT call the
+   function — instead ask the user a short, plain-text question (in their
+   language) to get that information first, then call the function once you
+   have a real answer.
+4. When a patient describes symptoms, call search_doctors to find
+   nearby specialists once you have their location.
+5. When returning doctor results, format them inside this exact tag:
    <DOCTOR_CARDS>[{...json array...}]</DOCTOR_CARDS>
    Each object: { doctor_id, name, specialization, distance_km,
    rating, languages_spoken, consultation_fee, clinic_name }
-5. Before booking, confirm doctor, date, time, and symptoms with user.
-6. If patient says urgent -> set is_urgent: true in book_appointment.
-7. For doctors/nurses, only share patient data they are authorized for.
-8. Be warm, empathetic, and clear.
+6. Before booking, confirm doctor, date, time, and symptoms with user.
+7. If patient says urgent -> set is_urgent: true in book_appointment.
+8. For doctors/nurses, only share patient data they are authorized for.
+9. Be warm, empathetic, and clear.
 """
+
+# Re-sent at the end of the message list on every turn (closer to the
+# generation point = stronger influence than text buried in the system
+# prompt alone). Kept out of persistent history so it doesn't bloat context.
+LANGUAGE_REMINDER = (
+    "Reminder: detect the language of the user's most recent message right "
+    "now and reply only in that language, even if previous turns used a "
+    "different language or the user's account is set to a different one."
+)
 
 DOCTOR_CARDS_RE = re.compile(r"<DOCTOR_CARDS>(.*?)</DOCTOR_CARDS>", re.DOTALL)
 
@@ -69,7 +89,9 @@ def init_session(session_id: str, user_role: str, user_id: str, lat, lng):
         return
     context_line = f"User role: {user_role}. User ID: {user_id}."
     if lat is not None and lng is not None:
-        context_line += f" Location: lat={lat}, lng={lng}."
+        context_line += f" The user's current browser location is lat={lat}, lng={lng} — use these real numbers if you need to call a location-based tool."
+    else:
+        context_line += " The user's location is not available yet. If you need it for a tool call, ask them for it in plain text first."
     sessions[session_id] = [
         {"role": "system", "content": SYSTEM_PROMPT + "\n\n" + context_line},
     ]
@@ -93,6 +115,15 @@ def _chunk_text(text: str, size: int = 6):
         yield " ".join(buf)
 
 
+def _create_completion(client: Groq, messages: list, tools: list):
+    return client.chat.completions.create(
+        model=config.GROQ_MODEL,
+        messages=messages,
+        tools=tools if tools else None,
+        tool_choice="auto" if tools else None,
+    )
+
+
 async def run_agent_turn(session_id: str, user_message: str, mcp_tools_schema: list, send_json, send_token):
     """One full agent turn: tool-calling loop + streamed final answer.
 
@@ -110,13 +141,37 @@ async def run_agent_turn(session_id: str, user_message: str, mcp_tools_schema: l
     tools = _mcp_schema_to_groq_tools(mcp_tools_schema)
 
     final_text = ""
-    for _ in range(5):
-        completion = client.chat.completions.create(
-            model=config.GROQ_MODEL,
-            messages=history,
-            tools=tools if tools else None,
-            tool_choice="auto" if tools else None,
-        )
+    for attempt in range(5):
+        api_messages = history + [{"role": "system", "content": LANGUAGE_REMINDER}]
+
+        try:
+            completion = _create_completion(client, api_messages, tools)
+        except APIError as e:
+            # The model tried to call a tool with malformed/placeholder
+            # arguments (e.g. lat="unknown") and Groq rejected the
+            # generation outright (tool_use_failed / 400). Don't crash the
+            # turn — retry once with tools disabled so the model is forced
+            # to ask a plain-text clarifying question instead.
+            try:
+                fallback_messages = api_messages + [{
+                    "role": "system",
+                    "content": (
+                        "Your previous attempt to call a function failed because "
+                        "required values were missing or invalid. Do not attempt "
+                        "to call any function right now. Instead, ask the user a "
+                        "short clarifying question (in their own language) to get "
+                        "the missing information."
+                    ),
+                }]
+                completion = _create_completion(client, fallback_messages, tools=[])
+            except Exception:
+                final_text = (
+                    "Sorry, I had trouble processing that just now. "
+                    "Could you tell me your city or area so I can find nearby doctors?"
+                )
+                history.append({"role": "assistant", "content": final_text})
+                break
+
         choice = completion.choices[0]
         msg = choice.message
 
