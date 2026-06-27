@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse
+from supabase import create_client
 
+import config
 from services.templates import render
-from services.supabase_client import get_supabase, get_supabase_admin
+from services.supabase_client import get_supabase_admin
 from services.auth_service import set_session, clear_session, get_session, set_flash, dashboard_path_for_role
 
 router = APIRouter()
@@ -18,17 +20,42 @@ async def login_page(request: Request):
 
 @router.post("/login")
 async def login_submit(request: Request, email: str = Form(...), password: str = Form(...)):
-    supabase = get_supabase()
     admin = get_supabase_admin()
+
+    # IMPORTANT: use a fresh client per request for sign_in_with_password.
+    # supabase-py stores the auth session *inside the client object*, so reusing
+    # one shared/global client across concurrent requests means different users'
+    # logins can overwrite each other's session state. A short-lived client
+    # avoids that entirely (we only need it to verify the password here).
+    auth_client = create_client(config.SUPABASE_URL, config.SUPABASE_ANON_KEY)
+
     try:
-        auth_resp = supabase.auth.sign_in_with_password({"email": email, "password": password})
-        user_id = auth_resp.user.id
-        profile_resp = admin.table("profiles").select("*").eq("id", user_id).single().execute()
-        profile = profile_resp.data
-        if not profile:
-            raise ValueError("No profile found for this account.")
+        auth_resp = auth_client.auth.sign_in_with_password({"email": email, "password": password})
+    except Exception as e:
+        msg = str(e)
+        if "Email not confirmed" in msg:
+            error = "Please confirm your email address before logging in. Check your inbox for the confirmation link."
+        elif "Invalid login credentials" in msg:
+            error = "Invalid email or password."
+        else:
+            error = f"Login failed: {msg}"
+        return render(request, "login.html", {"error": error}, status_code=401)
+
+    if not auth_resp.user:
+        return render(request, "login.html", {"error": "Invalid email or password."}, status_code=401)
+
+    user_id = auth_resp.user.id
+    try:
+        profile = admin.table("profiles").select("*").eq("id", user_id).single().execute().data
     except Exception:
-        return render(request, "login.html", {"error": "Invalid credentials"}, status_code=401)
+        profile = None
+
+    if not profile:
+        return render(
+            request, "login.html",
+            {"error": "Your account exists but has no profile record. Contact support."},
+            status_code=401,
+        )
 
     response = RedirectResponse(url=dashboard_path_for_role(profile["role"]), status_code=303)
     set_session(response, {
@@ -67,11 +94,11 @@ async def register_submit(
     emergency_contact_phone: str = Form(""),
     allergies: str = Form(""),
 ):
-    supabase = get_supabase()
+    auth_client = create_client(config.SUPABASE_URL, config.SUPABASE_ANON_KEY)
     admin = get_supabase_admin()
 
     try:
-        auth_resp = supabase.auth.sign_up({"email": email, "password": password})
+        auth_resp = auth_client.auth.sign_up({"email": email, "password": password})
         user = auth_resp.user
         if user is None:
             raise ValueError("Could not create account. The email may already be registered.")
