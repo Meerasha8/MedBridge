@@ -57,6 +57,18 @@ async def login_submit(request: Request, email: str = Form(...), password: str =
             status_code=401,
         )
 
+    if profile["role"] in ("nurse", "receptionist"):
+        sub = (
+            admin.table("sub_accounts").select("is_active")
+            .eq("profile_id", profile["id"]).maybe_single().execute()
+        )
+        if not sub or not sub.data or not sub.data["is_active"]:
+            return render(
+                request, "login.html",
+                {"error": "This staff account has been deactivated. Contact the doctor who manages it."},
+                status_code=403,
+            )
+
     response = RedirectResponse(url=dashboard_path_for_role(profile["role"]), status_code=303)
     set_session(response, {
         "user_id": profile["id"], "role": profile["role"],

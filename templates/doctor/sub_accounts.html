@@ -45,9 +45,16 @@
         <span class="text-xs px-2 py-1 rounded-full {{ 'bg-green-100 text-green-700' if s.is_active else 'bg-gray-100 text-gray-500' }}">
           {{ 'active' if s.is_active else 'inactive' }}
         </span>
+        <form method="POST" action="/doctor/sub-accounts/{{ s.id }}/reset-password">
+          <button class="text-sm text-primary font-medium">Reset password</button>
+        </form>
         {% if s.is_active %}
         <form method="POST" action="/doctor/sub-accounts/{{ s.id }}/deactivate">
           <button class="text-sm text-red-500 font-medium">Deactivate</button>
+        </form>
+        {% else %}
+        <form method="POST" action="/doctor/sub-accounts/{{ s.id }}/activate">
+          <button class="text-sm text-green-600 font-medium">Reactivate</button>
         </form>
         {% endif %}
       </div>

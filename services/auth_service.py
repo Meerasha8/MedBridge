@@ -71,7 +71,7 @@ def dashboard_path_for_role(role: str) -> str:
 def set_flash(response: Response, message: str, category: str = "success") -> None:
     payload = json.dumps({"message": message, "category": category})
     signed = _signer.sign(payload.encode()).decode()
-    response.set_cookie(key=config.FLASH_COOKIE_NAME, value=signed, httponly=True, samesite="lax", max_age=30)
+    response.set_cookie(key=config.FLASH_COOKIE_NAME, value=signed, httponly=True, samesite="lax", max_age=300)
 
 
 def peek_flash(request: Request) -> dict | None:
@@ -80,7 +80,7 @@ def peek_flash(request: Request) -> dict | None:
     if not raw:
         return None
     try:
-        unsigned = _signer.unsign(raw, max_age=30)
+        unsigned = _signer.unsign(raw, max_age=300)
         return json.loads(unsigned.decode())
     except (BadSignature, SignatureExpired, ValueError):
         return None
