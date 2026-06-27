@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-10">
+  <div class="flex items-center justify-between mb-1">
+    <h1 class="text-2xl font-bold">Welcome, Dr. {{ user.full_name }}</h1>
+    {% if not doctor.is_verified %}
+    <span class="text-xs font-medium px-3 py-1 rounded-full bg-yellow-100 text-yellow-700">Pending verification</span>
+    {% else %}
+    <span class="text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-700">✓ Verified</span>
+    {% endif %}
+  </div>
+  <p class="text-gray-500 mb-8">{{ doctor.specialization }} · {{ doctor.clinic_name }}</p>
+
+  <div class="grid md:grid-cols-3 gap-4 mb-10">
+    <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+      <p class="text-2xl font-bold text-primary">{{ appointments_today | length }}</p>
+      <p class="text-sm text-gray-500">Upcoming appointments</p>
+    </div>
+    <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+      <p class="text-2xl font-bold text-primary">{{ doctor.rating }}</p>
+      <p class="text-sm text-gray-500">Rating ({{ doctor.total_reviews }} reviews)</p>
+    </div>
+    <a href="/notifications" class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow transition">
+      <p class="text-2xl font-bold text-primary">{{ notifications_count }}</p>
+      <p class="text-sm text-gray-500">Unread notifications</p>
+    </a>
+  </div>
+
+  <h2 class="text-lg font-semibold mb-4">Upcoming appointments</h2>
+  {% if appointments_today %}
+  <div class="grid gap-4">
+    {% for a in appointments_today %}
+    <a href="/doctor/appointments/{{ a.id }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow transition">
+      <div>
+        <p class="font-medium">{{ a.patients.profiles.full_name }}</p>
+        <p class="text-sm text-gray-500">{{ a.scheduled_at }}</p>
+      </div>
+      <span class="text-xs font-medium px-3 py-1 rounded-full
+        {% if a.status == 'pending' %} bg-yellow-100 text-yellow-700
+        {% elif a.status == 'confirmed' %} bg-blue-100 text-blue-700
+        {% elif a.status == 'in_progress' %} bg-orange-100 text-orange-700
+        {% elif a.status == 'completed' %} bg-green-100 text-green-700
+        {% else %} bg-red-100 text-red-700 {% endif %}">{{ a.status }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400">No upcoming appointments.</p>
+  {% endif %}
+</div>
+{% endblock %}

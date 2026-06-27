@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Appointment — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-10">
+  <a href="/patient/appointments" class="text-sm text-gray-500 hover:text-primary">← Back to appointments</a>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold">{{ doctor.profiles.full_name }}</h1>
+        <p class="text-teal-600 text-sm">{{ doctor.specialization }} · {{ doctor.clinic_name }}</p>
+        <p class="text-sm text-gray-500 mt-2">{{ appointment.scheduled_at }}</p>
+      </div>
+      <span class="text-xs font-medium px-3 py-1 rounded-full
+        {% if appointment.status == 'pending' %} bg-yellow-100 text-yellow-700
+        {% elif appointment.status == 'confirmed' %} bg-blue-100 text-blue-700
+        {% elif appointment.status == 'in_progress' %} bg-orange-100 text-orange-700
+        {% elif appointment.status == 'completed' %} bg-green-100 text-green-700
+        {% else %} bg-red-100 text-red-700 {% endif %}">{{ appointment.status }}</span>
+    </div>
+    {% if appointment.symptoms_text %}
+    <p class="text-sm text-gray-600 mt-4 border-t border-gray-100 pt-4">📝 {{ appointment.symptoms_text }}</p>
+    {% endif %}
+  </div>
+
+  {% if prescription %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-3">Prescription</h2>
+    <p class="text-sm text-gray-600 mb-3">{{ prescription.notes }}</p>
+    <table class="w-full text-sm">
+      <thead><tr class="text-left text-gray-500"><th class="py-1">Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+      <tbody>
+        {% for m in prescription.medicines %}
+        <tr class="border-t border-gray-50"><td class="py-2">{{ m.name }}</td><td>{{ m.dosage }}</td><td>{{ m.frequency }}</td><td>{{ m.duration_days }} days</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if prescription.pdf_url %}
+    <a href="{{ prescription.pdf_url }}" target="_blank" class="inline-block mt-4 text-primary text-sm font-medium">📄 Download PDF</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if documents %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-3">Documents shared</h2>
+    <div class="space-y-2">
+      {% for d in documents %}
+      <a href="{{ d.file_url }}" target="_blank" class="block text-sm text-primary hover:underline">📎 {{ d.file_name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if appointment.status == 'completed' %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-3">Your review</h2>
+    {% if review %}
+      <p class="text-sm">⭐ {{ review.rating }}/5 — {{ review.feedback_text }}</p>
+    {% else %}
+    <form method="POST" action="/patient/appointments/{{ appointment.id }}/review" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Rating</label>
+        <select name="rating" class="border border-gray-300 rounded-lg px-3 py-2 w-full" required>
+          <option value="5">⭐⭐⭐⭐⭐</option>
+          <option value="4">⭐⭐⭐⭐</option>
+          <option value="3">⭐⭐⭐</option>
+          <option value="2">⭐⭐</option>
+          <option value="1">⭐</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
+        <textarea name="feedback_text" rows="3" class="border border-gray-300 rounded-lg px-3 py-2 w-full"></textarea>
+      </div>
+      <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-secondary transition text-sm font-medium">Submit review</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

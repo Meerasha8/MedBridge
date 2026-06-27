@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MedBridge{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { colors: {
+        primary: '#028090', secondary: '#00A896', accent: '#02C39A', dark: '#1A2E35'
+      }}}
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-gray-50 text-dark min-h-screen flex flex-col">
+
+  {% if mcp_slow %}
+  <div id="mcp-banner" class="bg-amber-100 border-b border-amber-300 text-amber-800 text-sm px-4 py-2 flex items-center justify-between">
+    <span>⚡ Health services are warming up — first doctor search may take ~30 seconds. This is normal.</span>
+    <button onclick="document.getElementById('mcp-banner').remove()" class="text-amber-700 font-bold px-2">&times;</button>
+  </div>
+  {% endif %}
+
+  <nav class="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2">
+      <span class="text-primary font-bold text-xl">MedBridge</span>
+    </a>
+    <div class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
+      {% if user %}
+        {% if user.role == 'patient' %}
+          <a href="/patient/dashboard" class="hover:text-primary">Dashboard</a>
+          <a href="/chat" class="hover:text-primary">Chat</a>
+          <a href="/patient/appointments" class="hover:text-primary">Appointments</a>
+          <a href="/patient/documents" class="hover:text-primary">Documents</a>
+        {% elif user.role == 'doctor' %}
+          <a href="/doctor/dashboard" class="hover:text-primary">Dashboard</a>
+          <a href="/doctor/sub-accounts" class="hover:text-primary">Sub-accounts</a>
+          <a href="/doctor/profile" class="hover:text-primary">Profile</a>
+        {% elif user.role in ['nurse', 'receptionist'] %}
+          <a href="/nurse/dashboard" class="hover:text-primary">Dashboard</a>
+        {% elif user.role == 'admin' %}
+          <a href="/admin/dashboard" class="hover:text-primary">Dashboard</a>
+          <a href="/admin/audit-logs" class="hover:text-primary">Audit Logs</a>
+        {% endif %}
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-4">
+      {% if user %}
+        <a href="/notifications" class="relative text-gray-500 hover:text-primary" title="Notifications">🔔</a>
+        <span class="text-sm text-gray-700 font-medium">{{ user.full_name }}</span>
+        <form method="POST" action="/logout">
+          <button class="text-sm text-gray-500 hover:text-red-500">Logout</button>
+        </form>
+      {% else %}
+        <a href="/login" class="text-sm font-medium text-gray-600 hover:text-primary">Login</a>
+        <a href="/register" class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-secondary transition">Sign Up</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  {% if flash %}
+  <div class="px-6 pt-4">
+    <div class="rounded-lg px-4 py-3 text-sm font-medium
+      {% if flash.category == 'success' %} bg-green-50 text-green-700 border border-green-200
+      {% else %} bg-red-50 text-red-700 border border-red-200 {% endif %}">
+      {{ flash.message }}
+    </div>
+  </div>
+  {% endif %}
+
+  <main class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-sm text-gray-400 py-6 border-t border-gray-100 mt-10">
+    MedBridge © 2025
+  </footer>
+</body>
+</html>

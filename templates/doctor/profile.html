@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}My Profile — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-6 py-10">
+  <h1 class="text-2xl font-bold mb-6">My Profile</h1>
+  <form method="POST" action="/doctor/profile" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 grid md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
+      <input type="text" name="specialization" value="{{ doctor.specialization }}" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Experience (years)</label>
+      <input type="number" name="experience_years" value="{{ doctor.experience_years or '' }}" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Clinic name</label>
+      <input type="text" name="clinic_name" value="{{ doctor.clinic_name or '' }}" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Consultation fee (₹)</label>
+      <input type="number" name="consultation_fee" value="{{ doctor.consultation_fee or '' }}" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Clinic address</label>
+      <input type="text" name="clinic_address" value="{{ doctor.clinic_address or '' }}" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+    </div>
+    <input type="hidden" name="lat" value="{{ doctor.lat or '' }}">
+    <input type="hidden" name="lng" value="{{ doctor.lng or '' }}">
+    <div class="md:col-span-2">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Languages spoken</label>
+      <div class="grid grid-cols-3 gap-2 text-sm">
+        {% for lang in ['English','Hindi','Tamil','Telugu','Kannada','Malayalam','Bengali','Marathi','Gujarati'] %}
+        <label class="flex items-center gap-2">
+          <input type="checkbox" name="languages_spoken" value="{{ lang }}" {% if doctor.languages_spoken and lang in doctor.languages_spoken %}checked{% endif %}> {{ lang }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="md:col-span-2">
+      <button type="submit" class="bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-secondary transition font-medium">Save changes</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

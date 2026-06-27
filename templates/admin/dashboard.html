@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-10">
+  <h1 class="text-2xl font-bold mb-6">Pending doctor verifications</h1>
+
+  {% if pending_doctors %}
+  <div class="grid gap-4">
+    {% for d in pending_doctors %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between">
+      <div>
+        <p class="font-medium">{{ d.profiles.full_name }} — {{ d.specialization }}</p>
+        <p class="text-sm text-gray-500">{{ d.profiles.email }} · Reg No: {{ d.registration_number }}</p>
+        <p class="text-sm text-gray-500">{{ d.clinic_name }} — {{ d.clinic_address }}</p>
+      </div>
+      <form method="POST" action="/admin/doctors/{{ d.id }}/verify">
+        <button class="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-secondary transition">Verify</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400">No pending doctors. All caught up!</p>
+  {% endif %}
+</div>
+{% endblock %}

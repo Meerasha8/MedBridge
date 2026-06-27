@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Appointments — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-6 py-10">
+  <h1 class="text-2xl font-bold mb-6">My Appointments</h1>
+
+  <div class="flex gap-2 mb-6">
+    <a href="?filter=upcoming" class="px-4 py-2 rounded-lg text-sm font-medium {% if filter == 'upcoming' %}bg-primary text-white{% else %}bg-white border border-gray-200 text-gray-600{% endif %}">Upcoming</a>
+    <a href="?filter=past" class="px-4 py-2 rounded-lg text-sm font-medium {% if filter == 'past' %}bg-primary text-white{% else %}bg-white border border-gray-200 text-gray-600{% endif %}">Past</a>
+    <a href="?filter=all" class="px-4 py-2 rounded-lg text-sm font-medium {% if filter == 'all' %}bg-primary text-white{% else %}bg-white border border-gray-200 text-gray-600{% endif %}">All</a>
+  </div>
+
+  {% if appointments %}
+  <div class="grid gap-4">
+    {% for a in appointments %}
+    <a href="/patient/appointments/{{ a.id }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow transition">
+      <div>
+        <p class="font-medium">{{ a.doctors.profiles.full_name }} — {{ a.doctors.specialization }}</p>
+        <p class="text-sm text-gray-500">{{ a.scheduled_at }} · {{ a.doctors.clinic_name }}</p>
+      </div>
+      <span class="text-xs font-medium px-3 py-1 rounded-full
+        {% if a.status == 'pending' %} bg-yellow-100 text-yellow-700
+        {% elif a.status == 'confirmed' %} bg-blue-100 text-blue-700
+        {% elif a.status == 'in_progress' %} bg-orange-100 text-orange-700
+        {% elif a.status == 'completed' %} bg-green-100 text-green-700
+        {% else %} bg-red-100 text-red-700 {% endif %}">{{ a.status }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400">No appointments found.</p>
+  {% endif %}
+</div>
+{% endblock %}

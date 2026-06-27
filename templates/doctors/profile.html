@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ doctor.full_name or doctor.name }} — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-10">
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex items-start justify-between flex-wrap gap-4">
+      <div>
+        <h1 class="text-2xl font-bold">{{ doctor.full_name or doctor.name }}</h1>
+        <p class="text-teal-600 font-medium">{{ doctor.specialization }}</p>
+        <p class="text-sm text-gray-500 mt-2">{{ doctor.clinic_name }} — {{ doctor.clinic_address }}</p>
+        <p class="text-sm text-gray-500">🗣 {{ doctor.languages_spoken | join(', ') if doctor.languages_spoken else '' }}</p>
+        <p class="text-sm text-gray-500">{{ doctor.experience_years }} years experience · ₹{{ doctor.consultation_fee }} consult fee</p>
+      </div>
+      <a href="/doctors/{{ doctor.doctor_id or doctor.id }}/book" class="bg-primary text-white px-5 py-2.5 rounded-lg hover:bg-secondary transition text-sm font-medium whitespace-nowrap">Book Appointment →</a>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Patient reviews</h2>
+      <p class="text-sm text-gray-500">⭐ {{ ratings.avg_rating }} · {{ ratings.total_reviews }} reviews</p>
+    </div>
+    {% if reviews %}
+    <div class="space-y-4">
+      {% for r in reviews %}
+      <div class="border-b border-gray-100 pb-3">
+        <p class="text-sm font-medium">⭐ {{ r.rating }}/5</p>
+        <p class="text-sm text-gray-600 mt-1">{{ r.feedback }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-gray-400">No reviews yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

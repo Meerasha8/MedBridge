@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MedBridge — Healthcare in your language</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      primary: '#028090', secondary: '#00A896', accent: '#02C39A', dark: '#1A2E35'
+    }}}}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-white text-dark">
+
+  {% if mcp_slow %}
+  <div id="mcp-banner" class="bg-amber-100 border-b border-amber-300 text-amber-800 text-sm px-4 py-2 flex items-center justify-between">
+    <span>⚡ Health services are warming up — first doctor search may take ~30 seconds. This is normal.</span>
+    <button onclick="document.getElementById('mcp-banner').remove()" class="text-amber-700 font-bold px-2">&times;</button>
+  </div>
+  {% endif %}
+
+  <nav class="px-6 py-4 flex items-center justify-between max-w-6xl mx-auto">
+    <span class="text-primary font-bold text-xl">MedBridge</span>
+    <div class="flex items-center gap-4">
+      {% if user %}
+        <a href="/{{ 'patient' if user.role == 'patient' else user.role }}/dashboard" class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-secondary transition">Go to Dashboard</a>
+      {% else %}
+        <a href="/login" class="text-sm font-medium text-gray-600 hover:text-primary">Login</a>
+        <a href="/register" class="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-secondary transition">Sign Up</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <section class="bg-dark text-white">
+    <div class="max-w-5xl mx-auto px-6 py-24 text-center">
+      <h1 class="text-4xl md:text-6xl font-bold leading-tight">Healthcare in your language</h1>
+      <p class="mt-6 text-lg text-gray-300 max-w-2xl mx-auto">
+        Find verified doctors near you — in Tamil, Hindi, Telugu and 10+ more Indian languages
+      </p>
+      <div class="mt-10 flex flex-wrap justify-center gap-4">
+        <a href="/chat" class="bg-accent text-dark font-semibold px-6 py-3 rounded-xl hover:bg-secondary hover:text-white transition">Start Chatting →</a>
+        <a href="/doctors" class="border border-white/30 px-6 py-3 rounded-xl hover:bg-white/10 transition">Find Doctors</a>
+      </div>
+      <div class="mt-10 flex flex-wrap justify-center gap-3 text-sm text-gray-300">
+        <span class="bg-white/10 px-3 py-1 rounded-full">हिन्दी</span>
+        <span class="bg-white/10 px-3 py-1 rounded-full">தமிழ்</span>
+        <span class="bg-white/10 px-3 py-1 rounded-full">తెలుగు</span>
+        <span class="bg-white/10 px-3 py-1 rounded-full">ಕನ್ನಡ</span>
+        <span class="bg-white/10 px-3 py-1 rounded-full">മലയാളം</span>
+        <span class="bg-white/10 px-3 py-1 rounded-full">বাংলা</span>
+        <span class="bg-white/10 px-3 py-1 rounded-full">English</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-5xl mx-auto px-6 py-20">
+    <h2 class="text-2xl font-bold text-center mb-12">How it works</h2>
+    <div class="grid md:grid-cols-3 gap-8 text-center">
+      <div>
+        <div class="text-4xl mb-4">💬</div>
+        <h3 class="font-semibold mb-2">Describe symptoms in your language</h3>
+        <p class="text-gray-500 text-sm">Talk naturally — our AI understands 8+ Indian languages.</p>
+      </div>
+      <div>
+        <div class="text-4xl mb-4">🔍</div>
+        <h3 class="font-semibold mb-2">AI finds nearby verified doctors</h3>
+        <p class="text-gray-500 text-sm">Matched by specialization, language, and distance.</p>
+      </div>
+      <div>
+        <div class="text-4xl mb-4">📅</div>
+        <h3 class="font-semibold mb-2">Book appointment instantly</h3>
+        <p class="text-gray-500 text-sm">Confirm a slot in seconds, right from the chat.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-gray-50 py-12">
+    <div class="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
+      <div><p class="text-2xl font-bold text-primary">22</p><p class="text-xs text-gray-500">Languages</p></div>
+      <div><p class="text-2xl font-bold text-primary">✓</p><p class="text-xs text-gray-500">Verified Doctors</p></div>
+      <div><p class="text-2xl font-bold text-primary">AI</p><p class="text-xs text-gray-500">Powered</p></div>
+      <div><p class="text-2xl font-bold text-primary">Free</p><p class="text-xs text-gray-500">to Use</p></div>
+      <div><p class="text-2xl font-bold text-primary">🔒</p><p class="text-xs text-gray-500">Secure Records</p></div>
+    </div>
+  </section>
+
+  <footer class="text-center text-sm text-gray-400 py-8 border-t border-gray-100">
+    MedBridge © 2025
+  </footer>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Sub-accounts — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-10">
+  <h1 class="text-2xl font-bold mb-6">Sub-accounts</h1>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+    <h2 class="font-semibold mb-4">Add nurse or receptionist</h2>
+    <form method="POST" action="/doctor/sub-accounts" class="grid md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+        <input type="text" name="full_name" required class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input type="email" name="email" required class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+        <input type="text" name="phone" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+        <select name="role" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+          <option value="nurse">Nurse</option>
+          <option value="receptionist">Receptionist</option>
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-secondary transition text-sm font-medium">Create account</button>
+      </div>
+    </form>
+  </div>
+
+  <h2 class="font-semibold mb-4">Existing sub-accounts</h2>
+  {% if sub_accounts %}
+  <div class="grid gap-3">
+    {% for s in sub_accounts %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
+      <div>
+        <p class="font-medium">{{ s.profiles.full_name }} <span class="text-xs text-gray-400">({{ s.role }})</span></p>
+        <p class="text-sm text-gray-500">{{ s.profiles.email }} · {{ s.profiles.phone or '-' }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs px-2 py-1 rounded-full {{ 'bg-green-100 text-green-700' if s.is_active else 'bg-gray-100 text-gray-500' }}">
+          {{ 'active' if s.is_active else 'inactive' }}
+        </span>
+        {% if s.is_active %}
+        <form method="POST" action="/doctor/sub-accounts/{{ s.id }}/deactivate">
+          <button class="text-sm text-red-500 font-medium">Deactivate</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400">No sub-accounts yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

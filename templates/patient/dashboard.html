@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-10">
+  <h1 class="text-2xl font-bold mb-1">Hi, {{ user.full_name }} 👋</h1>
+  <p class="text-gray-500 mb-8">Here's what's happening with your care.</p>
+
+  <div class="grid md:grid-cols-3 gap-4 mb-10">
+    <a href="/chat" class="bg-primary text-white rounded-xl p-5 hover:bg-secondary transition">
+      <p class="font-semibold">💬 Talk to MedBridge AI</p>
+      <p class="text-sm text-white/80 mt-1">Describe symptoms and find doctors</p>
+    </a>
+    <a href="/doctors" class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow transition">
+      <p class="font-semibold">🔍 Search doctors</p>
+      <p class="text-sm text-gray-500 mt-1">Browse the doctor directory</p>
+    </a>
+    <a href="/notifications" class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow transition">
+      <p class="font-semibold">🔔 {{ notifications_count }} unread notifications</p>
+      <p class="text-sm text-gray-500 mt-1">Stay up to date</p>
+    </a>
+  </div>
+
+  <h2 class="text-lg font-semibold mb-4">Upcoming appointments</h2>
+  {% if appointments %}
+  <div class="grid gap-4 mb-10">
+    {% for a in appointments %}
+    <a href="/patient/appointments/{{ a.id }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow transition">
+      <div>
+        <p class="font-medium">{{ a.doctors.profiles.full_name }} — {{ a.doctors.specialization }}</p>
+        <p class="text-sm text-gray-500">{{ a.scheduled_at }}</p>
+      </div>
+      <span class="text-xs font-medium px-3 py-1 rounded-full
+        {% if a.status == 'pending' %} bg-yellow-100 text-yellow-700
+        {% elif a.status == 'confirmed' %} bg-blue-100 text-blue-700
+        {% elif a.status == 'in_progress' %} bg-orange-100 text-orange-700
+        {% elif a.status == 'completed' %} bg-green-100 text-green-700
+        {% else %} bg-red-100 text-red-700 {% endif %}">{{ a.status }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400 mb-10">No upcoming appointments. <a href="/doctors" class="text-primary">Find a doctor →</a></p>
+  {% endif %}
+
+  <h2 class="text-lg font-semibold mb-4">Recent prescriptions</h2>
+  {% if prescriptions %}
+  <div class="grid gap-3">
+    {% for p in prescriptions %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center justify-between">
+      <p class="text-sm">Dr. {{ p.doctors.profiles.full_name }} — {{ p.doctors.specialization }}</p>
+      {% if p.pdf_url %}<a href="{{ p.pdf_url }}" target="_blank" class="text-primary text-sm font-medium">View PDF</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-400">No prescriptions yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

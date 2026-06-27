@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Chat — MedBridge{% endblock %}
+{% block content %}
+<div class="flex h-[calc(100vh-57px)]">
+  <div class="w-64 bg-dark text-white flex flex-col">
+    <div class="p-4 border-b border-white/10">
+      <p class="font-bold text-lg">MedBridge AI</p>
+      <button onclick="location.reload()" class="mt-3 w-full bg-white/10 hover:bg-white/20 text-sm py-2 rounded-lg transition">+ New Chat</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 text-sm text-white/60">
+      <p class="mb-2">Current session</p>
+      <div class="bg-white/10 rounded-lg px-3 py-2 text-white">Active conversation</div>
+    </div>
+    <div class="p-4 text-xs text-white/40 border-t border-white/10">Logged in as {{ user.full_name }} ({{ user.role }})</div>
+  </div>
+
+  <div class="flex-1 flex flex-col bg-gray-50">
+    <div id="messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+      <div class="bg-white border border-teal-100 rounded-xl p-4 shadow-sm max-w-lg">
+        <p class="text-sm text-gray-700">
+          👋 Hi {{ user.full_name }}! I'm MedBridge AI. Tell me about your symptoms in any language, and I'll help you find the right doctor nearby.
+        </p>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-200 p-4 flex gap-3 items-center bg-white">
+      <select id="lang-select" class="border border-gray-300 rounded-lg px-2 py-3 text-sm">
+        <option value="auto">🌐 Auto</option>
+        <option value="en">English</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ta">தமிழ்</option>
+        <option value="te">తెలుగు</option>
+        <option value="kn">ಕನ್ನಡ</option>
+        <option value="ml">മലയാളം</option>
+        <option value="bn">বাংলা</option>
+        <option value="mr">मराठी</option>
+        <option value="gu">ગુજરાતી</option>
+      </select>
+      <input id="msg-input" type="text" placeholder="Describe your symptoms..."
+        class="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary">
+      <button id="send-btn" class="bg-primary text-white px-6 py-3 rounded-xl hover:bg-secondary transition">Send →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.MEDBRIDGE_SESSION_ID = "{{ session_id }}";
+  window.MEDBRIDGE_USER_ID = "{{ user.user_id }}";
+  window.MEDBRIDGE_ROLE = "{{ user.role }}";
+</script>
+<script src="/static/js/chat.js"></script>
+{% endblock %}

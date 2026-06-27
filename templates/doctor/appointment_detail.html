@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Appointment — MedBridge{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-10">
+  <a href="/doctor/dashboard" class="text-sm text-gray-500 hover:text-primary">← Back to dashboard</a>
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-bold">{{ patient.profiles.full_name }}</h1>
+        <p class="text-sm text-gray-500 mt-1">📞 {{ patient.profiles.phone or '-' }} · 🩸 {{ patient.blood_group or '-' }} · 🎂 {{ patient.date_of_birth or '-' }}</p>
+        <p class="text-sm text-gray-500 mt-2">{{ appointment.scheduled_at }}</p>
+      </div>
+      <span class="text-xs font-medium px-3 py-1 rounded-full
+        {% if appointment.status == 'pending' %} bg-yellow-100 text-yellow-700
+        {% elif appointment.status == 'confirmed' %} bg-blue-100 text-blue-700
+        {% elif appointment.status == 'in_progress' %} bg-orange-100 text-orange-700
+        {% elif appointment.status == 'completed' %} bg-green-100 text-green-700
+        {% else %} bg-red-100 text-red-700 {% endif %}">{{ appointment.status }}</span>
+    </div>
+    {% if appointment.symptoms_text %}
+    <p class="text-sm text-gray-600 mt-4 border-t border-gray-100 pt-4">📝 {{ appointment.symptoms_text }}
+      {% if appointment.is_urgent %}<span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">URGENT</span>{% endif %}
+    </p>
+    {% endif %}
+  </div>
+
+  {% if user.role in ['doctor', 'nurse'] %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-3">Update status</h2>
+    <form method="POST" action="/doctor/appointments/{{ appointment.id }}/status" class="space-y-3">
+      <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 w-full">
+        {% for s in ['pending','confirmed','in_progress','completed','cancelled'] %}
+        <option value="{{ s }}" {% if appointment.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <textarea name="notes" rows="2" placeholder="Notes" class="border border-gray-300 rounded-lg px-3 py-2 w-full">{{ appointment.notes or '' }}</textarea>
+      <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-secondary transition text-sm font-medium">Update</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if documents %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-3">Patient documents (consented)</h2>
+    <div class="space-y-2">
+      {% for d in documents %}
+      <a href="{{ d.file_url }}" target="_blank" class="block text-sm text-primary hover:underline">📎 {{ d.file_name }} — {{ d.description }}</a>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <p class="text-sm text-gray-400 mt-6">No consented documents available for this patient yet.</p>
+  {% endif %}
+
+  {% if user.role == 'doctor' %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-3">Prescription</h2>
+    {% if prescription %}
+      <p class="text-sm text-gray-600 mb-3">{{ prescription.notes }}</p>
+      <table class="w-full text-sm mb-3">
+        <thead><tr class="text-left text-gray-500"><th class="py-1">Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+        <tbody>
+          {% for m in prescription.medicines %}
+          <tr class="border-t border-gray-50"><td class="py-2">{{ m.name }}</td><td>{{ m.dosage }}</td><td>{{ m.frequency }}</td><td>{{ m.duration_days }} days</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if prescription.pdf_url %}<a href="{{ prescription.pdf_url }}" target="_blank" class="text-primary text-sm font-medium">📄 View PDF</a>{% endif %}
+    {% else %}
+    <form method="POST" action="/doctor/appointments/{{ appointment.id }}/prescription" class="space-y-4" id="prescription-form">
+      <div id="medicine-rows" class="space-y-3">
+        <div class="grid grid-cols-5 gap-2">
+          <input type="text" name="medicine_names" placeholder="Name" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+          <input type="text" name="medicine_dosages" placeholder="Dosage" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+          <input type="text" name="medicine_frequencies" placeholder="Frequency" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+          <input type="number" name="medicine_durations" placeholder="Days" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+          <input type="text" name="medicine_instructions" placeholder="Instructions" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+        </div>
+      </div>
+      <button type="button" onclick="addMedicineRow()" class="text-sm text-primary font-medium">+ Add another medicine</button>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <textarea name="notes" rows="2" class="border border-gray-300 rounded-lg px-3 py-2 w-full"></textarea>
+      </div>
+      <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-secondary transition text-sm font-medium">Generate prescription</button>
+    </form>
+    <script>
+    function addMedicineRow() {
+      const container = document.getElementById('medicine-rows');
+      const row = document.createElement('div');
+      row.className = 'grid grid-cols-5 gap-2';
+      row.innerHTML = `
+        <input type="text" name="medicine_names" placeholder="Name" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+        <input type="text" name="medicine_dosages" placeholder="Dosage" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+        <input type="text" name="medicine_frequencies" placeholder="Frequency" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+        <input type="number" name="medicine_durations" placeholder="Days" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">
+        <input type="text" name="medicine_instructions" placeholder="Instructions" class="border border-gray-300 rounded-lg px-2 py-1.5 text-sm">`;
+      container.appendChild(row);
+    }
+    </script>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
