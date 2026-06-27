@@ -45,7 +45,9 @@ def get_groq_client() -> Groq:
 
 def _mcp_schema_to_groq_tools(mcp_tools: list) -> list:
     tools = []
-    for t in mcp_tools:
+    for t in mcp_tools or []:
+        if not isinstance(t, dict):
+            continue
         name = t.get("name") or t.get("tool_name")
         if not name:
             continue

@@ -46,9 +46,27 @@ async def fetch_tool_schemas() -> list:
         async with httpx.AsyncClient(timeout=config.MCP_HTTP_TIMEOUT) as client:
             resp = await client.get(f"{config.MCP_SERVER_URL}/tools", headers=_HEADERS)
             if resp.status_code == 200:
-                return resp.json()
+                data = resp.json()
+                return _normalize_tool_list(data)
     except Exception:
         pass
+    return []
+
+
+def _normalize_tool_list(data) -> list:
+    """The MCP server's /tools endpoint might return a bare list, or a dict
+    wrapping the list under a key like "tools"/"data"/"results". Handle all
+    of those shapes so callers always get a clean list of tool-schema dicts."""
+    if isinstance(data, list):
+        return [t for t in data if isinstance(t, dict)]
+    if isinstance(data, dict):
+        for key in ("tools", "data", "results", "items"):
+            value = data.get(key)
+            if isinstance(value, list):
+                return [t for t in value if isinstance(t, dict)]
+        # Maybe the dict itself is a single tool schema.
+        if "name" in data or "tool_name" in data:
+            return [data]
     return []
 
 
